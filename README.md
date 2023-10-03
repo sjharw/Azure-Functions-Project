@@ -1,6 +1,6 @@
-# Deploying to Azure Function App walkthrough
+# Azure Functions Project deployment walkthrough
 
-Walkthrough of creating an Azure Functions Project locally (from VSCode) and deploying it to Azure Functions App in Azure. This project gets data from an API, processes it, then send the data to Event Hub using Azure Key Vault to manage connection strings.
+Walkthrough of creating an Azure Functions Project locally (from VSCode) and deploying it to Azure Functions App in Azure. This project gives a template for getting data from an API, processing it, and sending the data to Event Hub using Azure Key Vault to manage the connection strings.
 
 ## Getting started
 
@@ -69,7 +69,7 @@ In VSCode, you will need to install the following extensions:
 You will need to set up a Python Virtual Environment called `azure-func-env` in the root directory of the project folder, and download all the required packages to this environment using the requirements.txt file. This environment is used to develop the functions locally. Note that, when you deploy your functions to Azure, you will need to provide a seperate `requirements.txt` file that is compatible with Azure's Linux OS, hence why there is a seperate `requirements.txt` file exists in the "AzureFunctionsProject" folder.
 
 Setup Python environment from Windows CMD:
-1. Navigate to project directory: `<path_to/Azure-Functions-App>`
+1. Navigate to project directory: `<path_to/Azure-Functions-Project>`
 2. Create python environment: `python -m venv azure-func-env`
 3. Activate environment: `azure-func-env\Scripts\activate`
 4. Install required dependencies to environment using requirement.txt: `pip install -r requirements.txt`
