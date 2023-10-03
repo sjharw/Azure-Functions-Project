@@ -107,7 +107,8 @@ The final project structure for an Azure Functions Project should look something
 - `local.settings.json` stores application settings and connection strings for when you are developing and running your functions locally. Here, you can supply the connection string to your storage account as string a value to the key "AzureWebJobsStorage".
 - `utils.py` contains utility functions that are used by the Azure Function (function_app).
 
-<b>Utility functions<b>
+<b>Utility functions</b>
+<br>
 The functions in `utils.py` are used to perform the following steps:
 1. Connect to Azure Vault and get connection string (for connecting to Event Hub)
 2. Get data from API
@@ -115,6 +116,7 @@ The functions in `utils.py` are used to perform the following steps:
 4. Connect and send data to Event Hub 
 
 <b>Dependencies</b>
+<br>
 The following [Azure PIP packages](https://pypi.org/project/azure/) are used throughout this project:
  - azure-core
  - azure-eventhub
