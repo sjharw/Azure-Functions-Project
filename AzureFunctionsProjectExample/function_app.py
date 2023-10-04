@@ -15,7 +15,7 @@ API_KEY = os.environ["ApiKey"]
 # Create vaul url string using vault name
 vault_url = f"https://{VAULT_NAME}.vault.azure.net"
 
-# Supply API URL of interest
+# Supply API URL of interest (embedding API key if required)
 api_url = "<api_of_interest>"
 
 app = func.FunctionApp()
@@ -38,13 +38,14 @@ def stream_to_eventhub(myTimer: func.TimerRequest) -> None:
     if myTimer.past_due:
         logging.info('The timer is past due!')
 
-    # Get the the Event Hub policy connection string
-    # for the policy that allows you to send data to Event Hub
-    # The secret string should look like this: "<Endpoint=ENDPOINT>://<NAME_SPACE>.servicebus.windows.net/;SharedAccessKeyName=<KEY_NAME>;SharedAccessKey=<KEY_VALUE>;"
+    # Get the the Event Hub Shared Access Signature (SAS) token value stored in Key Vault
+    # The value should look like this: "<Endpoint=ENDPOINT>://<NAME_SPACE>.servicebus.windows.net/;SharedAccessKeyName=<KEY_NAME>;SharedAccessKey=<KEY_VALUE>;"
     secret = request_secret_key(vault_url, SECRET_NAME)
 
     connect_str = secret + f"EntityPath={EVENTHUB_NAME}"
 
+    # Use SAS token within connection string to authenticate connection to Event Hub
+    # Here we establish an AMQP connection to Azure Event Hub over a WebSocket connection.
     producer_client = EventHubProducerClient.from_connection_string(connect_str, eventhub_name= EVENTHUB_NAME, transport_type= TransportType.AmqpOverWebsocket)
 
     data = get_api_data(api_url= api_url)

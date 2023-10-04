@@ -1,8 +1,8 @@
 # Azure Functions Project deployment walkthrough
 
-Walkthrough of creating an Azure Functions Project locally (from VSCode) and deploying it to Azure Functions App in Azure. This project gives a template for getting data from an API, processing it, and sending the data to Event Hub using Azure Key Vault to manage the connection strings.
+Walkthrough of creating an Azure Functions Project locally (from VSCode) and deploying it to Azure Functions App in Azure. This project gives a template for getting data from an API, processing it, and sending the data to Event Hub, using Azure Key Vault to manage the connection strings.
 
-## Getting started
+## Setup Azure prerequisites
 
 ### Spin up resources in Azure
 In Azure, you will need the following resources setup:
@@ -11,51 +11,12 @@ In Azure, you will need the following resources setup:
 - Azure Event Hub (will recieve data from Azure Functions App)
 - Azure Storage Account (used to store various artifacts and data related to your functions, such as function triggers, logs, and state)
 
-### Setup Event Hub policies and store as secrets in Key Vault
-Within Azure Event Hub, you will need to setup a policy for sending data to Event Hub. You could call this policy something like `AzureFunctionsApp-sender`, and set is as a 'Send' claim. This policy will permit Azure Functions App to send data to Event Hub. Copy the policy value (access key) to Azure Key Vault as a secret. The secret value should look something like this: `<Endpoint=ENDPOINT>://<NAME_SPACE>.servicebus.windows.net/;SharedAccessKeyName=<KEY_NAME>;SharedAccessKey=<KEY_VALUE>;`. Name the secret.
+### Setup Event Hub policy and store as secret in Key Vault
+Within Azure Event Hub, you will need to setup a Shared Access Policy for sending data to Event Hub. You could call this policy something like `AzureFunctionsApp-sender`, and set is as a 'Send' claim. This is referred to as a Shared Access Signature (SAS) token and it is used by a resource (in this case Azure Functions App) to authenticate the connection with Event Hub and send events to the Hub. 
 
-### Store environment variables in Azure Functions App
-Any private variables your code uses should be stored in application settings of Azure Functions App (go to the configuration tab). These variables should be stored as a value and be given a name thats used to access that value. For example, you should store the name of the secret (that contains the policy string for sending data to Event Hub) as a value under the name "Secretname". You will also need to store the name of the Key Vault as a value under the name "VaultName", and the Event Hub name as a value under the name "EventHubName". If you used an API that requires a key, hten you should store the key value under the name "ApiKey". When you come to deploy you Azure Functions Project, you access these private variables from Azure Functions App.
+Copy the SAS token to Azure Key Vault and store it under a named secret. The secret can be named "SecretName" and the value (SAS token) should look something like this: `<Endpoint=ENDPOINT>://<NAME_SPACE>.servicebus.windows.net/;SharedAccessKeyName=<KEY_NAME>;SharedAccessKey=<KEY_VALUE>;`.
 
-<b>Store private variables in config.ini when deveoping locally</b>
-<br>
-When developing Azure Functions (function_app) locally, you will not be able to access any private variables stored in the application settings of Azure Functions App. Instead, you can supply these variables (such as the Vault Name and Secret Name) using a `config.ini` file. When you deploy the project to Azure, you will need to replace the variables imported from `config.ini` with those stored in application settings of Azure Functions App ("SecretName", "VaultName", "EventHubName", "ApiKey").
-
-
-For example, in development your variable import may look like this:
-```
-import configparser as ConfigParser
-
-config = ConfigParser()
-config.read("config.ini")
-ACCESS = config["ACCESS"]
-
-SECRET_NAME = ACCESS["SECRET_NAME"]
-VAULT_NAME = ACCESS["VAULT_NAME"]
-EVENTHUB_NAME = ACCESS["EVENTHUB_NAME"]
-API_KEY = ACCESS["API_KEY"]
-```
-
-Your `config.ini` file would look like:
-```
-[ACCESS]
-SECRET_NAME = "your_secret_name"
-VAULT_NAME = "your_vault_name"
-EVENTHUB_NAME = "your_eventhub_name"
-API_KEY ="your_api_key"
-```
-
-For deployment, these variables would be obtained from Azure Function App configuration environment instead:
-```
-import os
-
-SECRET_NAME = os.environ["SecretName"]
-VAULT_NAME = os.environ["VaultName"]
-EVENTHUB_NAME = os.environ["EventHubName"]
-API_KEY = os.environ["ApiKey"]
-```
-
-### Install Technology Stack for local development
+## Install technologies for local development
 The following technologies are required to create an Azure Functions Project in VSCode:
 - [Python](https://www.python.org/)
 - Visual Studio Code (VSCode)
@@ -65,32 +26,67 @@ The following technologies are required to create an Azure Functions Project in 
 In VSCode, you will need to install the following extensions:
 - Azure Tools
 
-### Setup Python Virtual Environment
-You will need to set up a Python Virtual Environment called `azure-func-env` in the root directory of the project folder, and download all the required packages to this environment using the requirements.txt file. This environment is used to develop the functions locally. Note that, when you deploy your functions to Azure, you will need to provide a seperate `requirements.txt` file that is compatible with Azure's Linux OS, hence why there is a seperate `requirements.txt` file exists in the "AzureFunctionsProject" folder.
+## Store environmet variables securely
 
-Setup Python environment from Windows CMD:
-1. Navigate to project directory: `<path_to/Azure-Functions-Project>`
-2. Create python environment: `python -m venv azure-func-env`
-3. Activate environment: `azure-func-env\Scripts\activate`
-4. Install required dependencies to environment using requirement.txt: `pip install -r requirements.txt`
+All private environment variables (such as the SAS token) should be stored in the application setting of Azure Functions App (see the resources configuration tab). When developing Azure Functions (function_app.py) locally, you will not be able to access any of the private variables stored in Azure Functions App. Instead, you can store and access these variables from the `local.settings.json` file in the root folder of the Azure Functions Project.
 
-If you need to manually install any packages then use `pip install <package name>`.
+The variables required for this project include:
+- Connection string for Storage Account
+- Name of secret that contains SAS token (for authenticating connection to Event Hub)
+- Name of the Key Vault (for connecting to Key Vault)
+- Name of Event Hub Namespace (for connecting to Event Hub)
+- API key (if a key is required to authenticate API request)
 
-## Set up a local Azure Functions Project
-Before you can deploy your local Python functions to Azure Functions App, you have to create an Azure Functions Project first. Azure Functions Project contains a set of files and configurations that enable you to create, develop, test, and deploy serverless functions to Microsoft Azure.
+### Local development
+Store all private variables in `local.settings.json` when developing locally.
+
+Your `local.settings.json` file should look something like this:
+```
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "<storage_account_connection_string>",
+    "VaultName": "<name_of_key_vault>",
+    "EventHubName": "<name_of_eventhub>",
+    "ApiKey": "<api_key>",
+    "SecretName": "<name_of_secret_in_key_vault>",
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "AzureWebJobsFeatureFlags": "EnableWorkerIndexing"
+  }
+}
+```
+
+You can import these variables into function_app.py using `os.environ`:
+```
+import os
+
+SECRET_NAME = os.environ["SecretName"]
+VAULT_NAME = os.environ["VaultName"]
+EVENTHUB_NAME = os.environ["EventHubName"]
+API_KEY = os.environ["ApiKey"]
+```
+
+### For deployment
+In deployment, all these private variables should be migrated to the application settings of Azure Functions App (see configuration tab). The variables should be stored using the same naming conventions ("AzureWebJobsStorage", "SecretName", "VaultName", "EventHubName", and "ApiKey"), and can be accessed by functions_app.py in the same way as local development (using `os.environ`).
+
+
+## Set up a Azure Functions Project
+Before you can deploy your local Python functions to Azure Functions App, you have to create an Azure Functions Project first which will store you Azure Function and relevant files. Here, we have created a Azure Functions Project folder called "AzureFunctionsProjectExample" which is an example project.
+
+Azure Functions Project contains a set of files and configurations that enable you to create, develop, test, and deploy serverless functions to Microsoft Azure.
 
 To create an Azure Functions Project and add your local functions, do the following:
-1. Create a folder to contain your Azure Functions Project, e.g., "AzureFunctionsProject"
+1. Create a folder to contain your Azure Functions Project, e.g., "AzureFunctionsProjectExample"
 2. Open the Command Palette and search for `Azure Functions: Create New Project..`
 3. It will ask you to...
-    - Choose a directory for the project -> "AzureFunctionsProject"
+    - Choose a directory for the project -> "AzureFunctionsProjectExample"
     - Type of trigger to use -> here we use timer trigger
     - Name of trigger -> here we call it stream_to_eventhub
-    - Python interpreter -> you want to point to your local virtual environment <path_to/azure-func-env>
+    - Python interpreter -> you want to point to your local virtual environment (.venv)
 
 The final project structure for an Azure Functions Project should look something like this:
 ```
-    AzureFunctionsProject/
+    AzureFunctionsProjectExample/
         .funcignore
         .gitignore
         .venv
@@ -101,11 +97,11 @@ The final project structure for an Azure Functions Project should look something
         utils.py
 ```
 
-- `function_app.py` contains the function code that performs specific task(s) when triggered. In this project, the code gets data from an API and sends this data to Event Hub.
+- `function_app.py` contains the function code that performs specific task(s) when triggered. In this project, the code gets data from an API and sends this data to Event Hub using the SAS token in Key Vault to authenticate.
 - `requirements.txt` contains a list of dependencies (packages) that the function code relies on to run. Azure is Linux OS so make sure your packages are all Linux compatible if you are developing in a Windows environmnet (e.g., pywin32 is not compatible with Azure).
 - `host.json` contains global configuration settings for the Azure Functions host. You should not need to edit this file.
-- `local.settings.json` stores application settings and connection strings for when you are developing and running your functions locally. Here, you can supply the connection string to your storage account as string a value to the key "AzureWebJobsStorage".
-- `utils.py` contains utility functions that are used by the Azure Function (function_app).
+- `local.settings.json` stores application settings and connection strings for when you are developing and running your functions locally. Here, you can supply the connection string to your storage account as string a value to the key "AzureWebJobsStorage". You can also store other values such as the Key Vault name, Event Hub name, Secret name, etc.
+- `utils.py` contains utility functions that are used by the Azure Function (function_app.py).
 
 <b>Utility functions</b>
 <br>
@@ -114,6 +110,14 @@ The functions in `utils.py` are used to perform the following steps:
 2. Get data from API
 3. Process and format data
 4. Connect and send data to Event Hub 
+
+## Setup Python Virtual Environment
+A virtual environment called `.venv` is automatically created when you create a Azure Functions Project, you can use this environment to run the functions locally. You can download all the required packages to this environment using the `requirements.txt` file from Windows CMD:
+1. Navigate to Azure Functions Project directory: `<path_to/Azure-Functions-Project/AzureFunctionsProjectExample>`
+2. Activate environment: `.venv\Scripts\activate`
+3. Install required dependencies to environment using requirement.txt: `pip install -r requirements.txt`
+
+If you need to manually install any packages then use `pip install <package name>`.
 
 <b>Dependencies</b>
 <br>
@@ -125,3 +129,13 @@ The following [Azure PIP packages](https://pypi.org/project/azure/) are used thr
  - websocket-client
  - [azure-functions](https://pypi.org/project/azure-functions/)
 
+## Run the function locally
+To run the Azure Functions locally, you will need to authenticate your Azure account. You can do this via Azure CLI, simple open a powershell terminal in VSCode and run `az login`. This will take you to your Microsoft Azure login account. Once logged in, you should be able to run the functions locally from Windows CMD:
+
+1. Navigate to your Azure Functions Project folder: `cd <path_to/Azure-Functions-Project/AzureFunctionsProjectExample>`
+2. Activate virtual environmnet: `.venv/Scripts/activate`
+3. Run the function: `func start --name function_app`
+
+## Deploy Azure Function Project
+
+To deploy your locally developed Azure Function project to the cloud, right click the Azure Function Project folder and click `Deploy to Function App...`. This will deploy your local Azure Functions Project to Azure Functions App.
