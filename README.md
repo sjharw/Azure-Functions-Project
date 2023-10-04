@@ -78,6 +78,7 @@ To create an Azure Functions Project and add your local functions, do the follow
 2. Open the Command Palette and search for `Azure Functions: Create New Project..`
 3. It will ask you to...
     - Choose a directory for the project -> "AzureFunctionsProjectExample"
+    - Choose a version -> go for V2 (recommended)
     - Type of trigger to use -> here we use timer trigger
     - Name of trigger -> here we call it stream_to_eventhub
     - Python interpreter -> you want to point to your local virtual environment (.venv)
