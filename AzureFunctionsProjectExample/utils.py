@@ -70,9 +70,9 @@ def send_data_to_eventhub(producer_client, data: str):
         None
     """
     try:
-        # Create an event with the weather data
+        # Create an event using the data
         event = EventData(body=data)
-        # Send the weather event to the Event Hub
+        # Send the event to the Event Hub
         producer_client.send_batch([event])
         # Print success message
         print("Event data successfully sent")
