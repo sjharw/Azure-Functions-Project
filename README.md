@@ -71,9 +71,7 @@ In deployment, all these private variables should be migrated to the application
 
 
 ## Set up a Azure Functions Project
-Before you can deploy your local Python functions to Azure Functions App, you have to create an Azure Functions Project first which will store you Azure Function and relevant files. Here, we have created a Azure Functions Project folder called "AzureFunctionsProjectExample" which is an example project.
-
-Azure Functions Project contains a set of files and configurations that enable you to create, develop, test, and deploy serverless functions to Microsoft Azure.
+Before you deploy your local Python functions to Azure Functions App, you have to create an Azure Functions Project first which will store you Azure Function and relevant files. Here, we have created a Azure Functions Project folder called "AzureFunctionsProjectExample" which is an example project.
 
 To create an Azure Functions Project and add your local functions, do the following:
 1. Create a folder to contain your Azure Functions Project, e.g., "AzureFunctionsProjectExample"
@@ -134,7 +132,7 @@ To run the Azure Functions locally, you will need to authenticate your Azure acc
 
 1. Navigate to your Azure Functions Project folder: `cd <path_to/Azure-Functions-Project/AzureFunctionsProjectExample>`
 2. Activate virtual environmnet: `.venv/Scripts/activate`
-3. Run the function: `func start --name function_app`
+3. Run the function: `func start --name <name_of_function>`
 
 ## Deploy Azure Function Project
 
